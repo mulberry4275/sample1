@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydroponic Water Quality Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+    <header class="bg-slate-800 border-b border-slate-700 py-6 px-8 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-emerald-400">Hidroponik IoT Dashboard</h1>
+                <p class="text-sm text-slate-400">Pemantauan Kualitas Air Real-time</p>
+            </div>
+            <div class="flex items-center gap-3 bg-slate-900 px-4 py-2 rounded-full border border-slate-700">
+                <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                <span id="status-text" class="text-sm font-medium text-slate-300">Terputus</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm hover:border-emerald-500/50 transition">
+                <div class="text-sm font-medium text-slate-400 mb-1">Suhu Air</div>
+                <div class="flex items-baseline gap-1">
+                    <span id="val-temp" class="text-4xl font-extrabold text-white">--</span>
+                    <span class="text-lg font-medium text-slate-400">°C</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm hover:border-emerald-500/50 transition">
+                <div class="text-sm font-medium text-slate-400 mb-1">Kelembaban Udara</div>
+                <div class="flex items-baseline gap-1">
+                    <span id="val-hum" class="text-4xl font-extrabold text-white">--</span>
+                    <span class="text-lg font-medium text-slate-400">%</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm hover:border-emerald-500/50 transition">
+                <div class="text-sm font-medium text-slate-400 mb-1">Tingkat pH</div>
+                <div class="flex items-baseline gap-1">
+                    <span id="val-ph" class="text-4xl font-extrabold text-white">--</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm hover:border-emerald-500/50 transition">
+                <div class="text-sm font-medium text-slate-400 mb-1">Kekeruhan Air</div>
+                <div class="flex items-baseline gap-1">
+                    <span id="val-turbidity" class="text-4xl font-extrabold text-white">--</span>
+                    <span class="text-lg font-medium text-slate-400">NTU</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <div id="card-system-status" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300">
+                <div>
+                    <div class="text-sm font-medium text-slate-400 mb-2">Status Sistem Kualitas Air</div>
+                    <div id="txt-system-status" class="text-2xl font-bold text-slate-400">Menunggu Data...</div>
+                </div>
+                <p id="txt-system-desc" class="text-xs text-slate-400 mt-4">Belum ada analisis ambang batas parameter sensor yang diproses.</p>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-medium text-slate-400 mb-1">Relay (Pompa/Sistem Air)</div>
+                    <div id="txt-relay-status" class="text-xl font-bold text-slate-400">OFF</div>
+                </div>
+                <div id="indicator-relay" class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center transition-colors duration-300">
+                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-medium text-slate-400 mb-1">Lampu LED Notifikasi</div>
+                    <div id="txt-led-status" class="text-xl font-bold text-slate-400">OFF</div>
+                </div>
+                <div id="indicator-led" class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center transition-all duration-300">
+                    <div class="w-4 h-4 rounded-full bg-slate-500"></div>
+                </div>
+            </div>
+
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm">
+            <h3 class="text-md font-semibold text-slate-300 mb-4">Payload JSON Terakhir Diterima:</h3>
+            <div class="bg-slate-900 rounded-xl p-4 font-mono text-sm text-emerald-400 overflow-x-auto border border-slate-750">
+                <span id="raw-payload">// Menunggu data dari ESP32...</span>
+            </div>
+            <div class="text-xs text-slate-500 mt-2 text-right">
+                Terakhir Diperbarui: <span id="last-update">-</span>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const MQTT_HOST = "broker.hivemq.com";
+        const MQTT_PORT = 8884; // Port WSS untuk koneksi HTTPS aman (GitHub Pages)
+        const MQTT_TOPIC = "hidroponik/kualitas_air";
+        const CLIENT_ID = "web_dashboard_" + Math.random().toString(16).substr(2, 8);
+
+        const client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), CLIENT_ID);
+
+        client.onConnectionLost = onConnectionLost;
+        client.onMessageArrived = onMessageArrived;
+
+        const connectOptions = {
+            onSuccess: onConnect,
+            onFailure: onFailure,
+            useSSL: true,
+            timeout: 3,
+            keepAliveInterval: 60
+        };
+
+        console.log("Menghubungkan ke broker MQTT...");
+        client.connect(connectOptions);
+
+        function onConnect() {
+            console.log("Terhubung ke MQTT Broker!");
+            document.getElementById("status-indicator").className = "w-3 h-3 rounded-full bg-emerald-500";
+            document.getElementById("status-text").innerText = "Terhubung";
+            document.getElementById("status-text").className = "text-sm font-medium text-emerald-400";
+            client.subscribe(MQTT_TOPIC);
+        }
+
+        function onFailure(message) {
+            console.log("Koneksi gagal: " + message.errorMessage);
+            setTimeout(() => client.connect(connectOptions), 5000);
+        }
+
+        function onConnectionLost(responseObject) {
+            if (responseObject.errorCode !== 0) {
+                console.log("Koneksi terputus: " + responseObject.errorMessage);
+                document.getElementById("status-indicator").className = "w-3 h-3 rounded-full bg-red-500 animate-pulse";
+                document.getElementById("status-text").innerText = "Terputus";
+                document.getElementById("status-text").className = "text-sm font-medium text-slate-300";
+                setTimeout(() => client.connect(connectOptions), 5000);
+            }
+        }
+
+        function onMessageArrived(message) {
+            console.log("Data masuk: " + message.payloadString);
+            
+            try {
+                const data = JSON.parse(message.payloadString);
+                
+                // 1. Update Nilai Sensor Utama
+                let temp = data.temperature !== undefined ? Number(data.temperature) : null;
+                let hum = data.humidity !== undefined ? Number(data.humidity) : null;
+                let pH = data.pH !== undefined ? Number(data.pH) : null;
+                let turbidity = data.turbidity !== undefined ? Number(data.turbidity) : null;
+
+                if (temp !== null) document.getElementById("val-temp").innerText = temp.toFixed(2);
+                if (hum !== null) document.getElementById("val-hum").innerText = hum.toFixed(1);
+                if (pH !== null) document.getElementById("val-ph").innerText = pH.toFixed(2);
+                if (turbidity !== null) document.getElementById("val-turbidity").innerText = turbidity.toFixed(2);
+                
+                // 2. Logika Output Sinkronisasi Berdasarkan Aturan ESP32 Subscriber
+                // Kondisi Bahaya: Kekeruhan > 1000 NTU ATAU pH < 6.0 ATAU pH > 8.0
+                if (turbidity !== null && pH !== null) {
+                    const isDanger = (turbidity > 1000.0 || pH < 6.0 || pH > 8.0);
+                    
+                    const cardSystem = document.getElementById("card-system-status");
+                    const txtSystemStatus = document.getElementById("txt-system-status");
+                    const txtSystemDesc = document.getElementById("txt-system-desc");
+                    const txtRelay = document.getElementById("txt-relay-status");
+                    const indicatorRelay = document.getElementById("indicator-relay");
+                    const txtLed = document.getElementById("txt-led-status");
+                    const indicatorLed = document.getElementById("indicator-led");
+
+                    if (isDanger) {
+                        // Desain Kondisi BAHAYA
+                        cardSystem.className = "bg-red-950/40 border border-red-500 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300";
+                        txtSystemStatus.innerText = "BAHAYA!";
+                        txtSystemStatus.className = "text-2xl font-bold text-red-400 animate-pulse";
+                        txtSystemDesc.innerText = "Tingkat kekeruhan air terlalu tinggi (>1000 NTU) atau kualitas pH air berada di luar batas normal (6-8).";
+                        
+                        // Status Relay ON
+                        txtRelay.innerText = "ON (Aktif)";
+                        txtRelay.className = "text-xl font-bold text-amber-400";
+                        indicatorRelay.className = "w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500 flex items-center justify-center transition-colors duration-300 shadow-md shadow-amber-500/10";
+                        
+                        // Status LED ON
+                        txtLed.innerText = "ON (Berkedip)";
+                        txtLed.className = "text-xl font-bold text-red-400";
+                        indicatorLed.className = "w-12 h-12 rounded-full bg-red-500/30 border border-red-500 flex items-center justify-center transition-all duration-300 shadow-md shadow-red-500/30 animate-ping-once";
+                        indicatorLed.innerHTML = '<div class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>';
+                    } else {
+                        // Desain Kondisi AMAN
+                        cardSystem.className = "bg-emerald-950/30 border border-emerald-500/40 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300";
+                        txtSystemStatus.innerText = "AMAN";
+                        txtSystemStatus.className = "text-2xl font-bold text-emerald-400";
+                        txtSystemDesc.innerText = "Seluruh parameter air (Tingkat Kekeruhan & Derajat keasaman pH) terpantau stabil dan ideal.";
+                        
+                        // Status Relay OFF
+                        txtRelay.innerText = "OFF";
+                        txtRelay.className = "text-xl font-bold text-slate-400";
+                        indicatorRelay.className = "w-12 h-12 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center transition-colors duration-300";
+                        
+                        // Status LED OFF
+                        txtLed.innerText = "OFF";
+                        txtLed.className = "text-xl font-bold text-slate-400";
+                        indicatorLed.className = "w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center transition-all duration-300";
+                        indicatorLed.innerHTML = '<div class="w-4 h-4 rounded-full bg-slate-500"></div>';
+                    }
+                }
+                
+                // 3. Tampilkan payload mentah dan penanda waktu
+                document.getElementById("raw-payload").innerText = message.payloadString;
+                document.getElementById("last-update").innerText = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                console.error("Format data bukan JSON valid:", error);
+            }
+        }
+    </script>
+</body>
+</html>
