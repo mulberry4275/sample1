@@ -85,14 +85,15 @@
                     <div id="txt-led-status" class="text-xl font-bold text-slate-400">OFF</div>
                 </div>
                 <div id="indicator-led" class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center transition-all duration-300">
-                    <div class="w-4 h-4 rounded-full bg-slate-500"></div>
+                    <div id="led-dot" class="w-4 h-4 rounded-full bg-slate-500"></div>
                 </div>
             </div>
 
         </div>
+
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm">
             <h3 class="text-md font-semibold text-slate-300 mb-4">Payload JSON Terakhir Diterima:</h3>
-            <div class="bg-slate-900 rounded-xl p-4 font-mono text-sm text-emerald-400 overflow-x-auto border border-slate-750">
+            <div class="bg-slate-900 rounded-xl p-4 font-mono text-sm text-emerald-400 overflow-x-auto border border-slate-700">
                 <span id="raw-payload">// Menunggu data dari ESP32...</span>
             </div>
             <div class="text-xs text-slate-500 mt-2 text-right">
@@ -104,25 +105,31 @@
 
     <script>
         const MQTT_HOST = "broker.hivemq.com";
-        const MQTT_PORT = 8884; // Port WSS untuk koneksi HTTPS aman (GitHub Pages)
+        const MQTT_PORT = 8884; 
         const MQTT_TOPIC = "hidroponik/kualitas_air";
         const CLIENT_ID = "web_dashboard_" + Math.random().toString(16).substr(2, 8);
 
-        const client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), CLIENT_ID);
+        // Validasi ketersediaan library Paho sebelum inisialisasi
+        let client;
+        try {
+            client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), CLIENT_ID);
+            
+            client.onConnectionLost = onConnectionLost;
+            client.onMessageArrived = onMessageArrived;
 
-        client.onConnectionLost = onConnectionLost;
-        client.onMessageArrived = onMessageArrived;
+            const connectOptions = {
+                onSuccess: onConnect,
+                onFailure: onFailure,
+                useSSL: true,
+                timeout: 3,
+                keepAliveInterval: 60
+            };
 
-        const connectOptions = {
-            onSuccess: onConnect,
-            onFailure: onFailure,
-            useSSL: true,
-            timeout: 3,
-            keepAliveInterval: 60
-        };
-
-        console.log("Menghubungkan ke broker MQTT...");
-        client.connect(connectOptions);
+            console.log("Menghubungkan ke broker MQTT...");
+            client.connect(connectOptions);
+        } catch (e) {
+            console.error("Gagal menginisialisasi MQTT Client:", e);
+        }
 
         function onConnect() {
             console.log("Terhubung ke MQTT Broker!");
@@ -134,7 +141,7 @@
 
         function onFailure(message) {
             console.log("Koneksi gagal: " + message.errorMessage);
-            setTimeout(() => client.connect(connectOptions), 5000);
+            setTimeout(() => { if(!client.connected) client.connect(connectOptions); }, 5000);
         }
 
         function onConnectionLost(responseObject) {
@@ -143,7 +150,7 @@
                 document.getElementById("status-indicator").className = "w-3 h-3 rounded-full bg-red-500 animate-pulse";
                 document.getElementById("status-text").innerText = "Terputus";
                 document.getElementById("status-text").className = "text-sm font-medium text-slate-300";
-                setTimeout(() => client.connect(connectOptions), 5000);
+                setTimeout(() => { client.connect(connectOptions); }, 5000);
             }
         }
 
@@ -153,7 +160,6 @@
             try {
                 const data = JSON.parse(message.payloadString);
                 
-                // 1. Update Nilai Sensor Utama
                 let temp = data.temperature !== undefined ? Number(data.temperature) : null;
                 let hum = data.humidity !== undefined ? Number(data.humidity) : null;
                 let pH = data.pH !== undefined ? Number(data.pH) : null;
@@ -164,8 +170,6 @@
                 if (pH !== null) document.getElementById("val-ph").innerText = pH.toFixed(2);
                 if (turbidity !== null) document.getElementById("val-turbidity").innerText = turbidity.toFixed(2);
                 
-                // 2. Logika Output Sinkronisasi Berdasarkan Aturan ESP32 Subscriber
-                // Kondisi Bahaya: Kekeruhan > 1000 NTU ATAU pH < 6.0 ATAU pH > 8.0
                 if (turbidity !== null && pH !== null) {
                     const isDanger = (turbidity > 1000.0 || pH < 6.0 || pH > 8.0);
                     
@@ -176,45 +180,39 @@
                     const indicatorRelay = document.getElementById("indicator-relay");
                     const txtLed = document.getElementById("txt-led-status");
                     const indicatorLed = document.getElementById("indicator-led");
+                    const ledDot = document.getElementById("led-dot");
 
                     if (isDanger) {
-                        // Desain Kondisi BAHAYA
                         cardSystem.className = "bg-red-950/40 border border-red-500 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300";
                         txtSystemStatus.innerText = "BAHAYA!";
-                        txtSystemStatus.className = "text-2xl font-bold text-red-400 animate-pulse";
+                        txtSystemStatus.className = "text-2xl font-bold text-red-400";
                         txtSystemDesc.innerText = "Tingkat kekeruhan air terlalu tinggi (>1000 NTU) atau kualitas pH air berada di luar batas normal (6-8).";
                         
-                        // Status Relay ON
                         txtRelay.innerText = "ON (Aktif)";
                         txtRelay.className = "text-xl font-bold text-amber-400";
-                        indicatorRelay.className = "w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500 flex items-center justify-center transition-colors duration-300 shadow-md shadow-amber-500/10";
+                        indicatorRelay.className = "w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500 flex items-center justify-center transition-colors duration-300 shadow-md";
                         
-                        // Status LED ON
-                        txtLed.innerText = "ON (Berkedip)";
+                        txtLed.innerText = "ON (Aktif)";
                         txtLed.className = "text-xl font-bold text-red-400";
-                        indicatorLed.className = "w-12 h-12 rounded-full bg-red-500/30 border border-red-500 flex items-center justify-center transition-all duration-300 shadow-md shadow-red-500/30 animate-ping-once";
-                        indicatorLed.innerHTML = '<div class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>';
+                        indicatorLed.className = "w-12 h-12 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center transition-all duration-300";
+                        ledDot.className = "w-4 h-4 rounded-full bg-red-500 animate-pulse";
                     } else {
-                        // Desain Kondisi AMAN
                         cardSystem.className = "bg-emerald-950/30 border border-emerald-500/40 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300";
                         txtSystemStatus.innerText = "AMAN";
                         txtSystemStatus.className = "text-2xl font-bold text-emerald-400";
                         txtSystemDesc.innerText = "Seluruh parameter air (Tingkat Kekeruhan & Derajat keasaman pH) terpantau stabil dan ideal.";
                         
-                        // Status Relay OFF
                         txtRelay.innerText = "OFF";
                         txtRelay.className = "text-xl font-bold text-slate-400";
                         indicatorRelay.className = "w-12 h-12 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center transition-colors duration-300";
                         
-                        // Status LED OFF
                         txtLed.innerText = "OFF";
                         txtLed.className = "text-xl font-bold text-slate-400";
                         indicatorLed.className = "w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center transition-all duration-300";
-                        indicatorLed.innerHTML = '<div class="w-4 h-4 rounded-full bg-slate-500"></div>';
+                        ledDot.className = "w-4 h-4 rounded-full bg-slate-500";
                     }
                 }
                 
-                // 3. Tampilkan payload mentah dan penanda waktu
                 document.getElementById("raw-payload").innerText = message.payloadString;
                 document.getElementById("last-update").innerText = new Date().toLocaleTimeString();
                 
