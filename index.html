@@ -12,8 +12,7 @@
     <header class="bg-slate-800 border-b border-slate-700 py-6 px-8 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-emerald-400">Hidroponik IoT Dashboard</h1>
-                <p class="text-sm text-slate-400">Pemantauan Kualitas Air Real-time</p>
+                <h1 class="text-2xl font-bold text-emerald-400">Indoor Farming Stroberi Irigasi Tetes</h1>
             </div>
             <div class="flex items-center gap-3 bg-slate-900 px-4 py-2 rounded-full border border-slate-700">
                 <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
@@ -25,6 +24,7 @@
     <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm hover:border-emerald-500/50 transition">
                 <div class="text-sm font-medium text-slate-400 mb-1">Suhu Air</div>
                 <div class="flex items-baseline gap-1">
@@ -49,15 +49,17 @@
             </div>
 
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm hover:border-emerald-500/50 transition">
-                <div class="text-sm font-medium text-slate-400 mb-1">Kekeruhan Air</div>
+                <div class="text-sm font-medium text-slate-400 mb-1">TDS</div>
                 <div class="flex items-baseline gap-1">
                     <span id="val-turbidity" class="text-4xl font-extrabold text-white">--</span>
-                    <span class="text-lg font-medium text-slate-400">NTU</span>
+                    <span class="text-lg font-medium text-slate-400">ppm</span>
                 </div>
             </div>
+
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
             <div id="card-system-status" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300">
                 <div>
                     <div class="text-sm font-medium text-slate-400 mb-2">Status Sistem Kualitas Air</div>
@@ -82,44 +84,14 @@
                     <div id="txt-led-status" class="text-xl font-bold text-slate-400">OFF</div>
                 </div>
                 <div id="indicator-led" class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center transition-all duration-300">
-                    <div id="led-dot" class="w-4 h-4 rounded-full bg-slate-500"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-8 shadow-md">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-700 pb-4 mb-6 gap-4">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-200">Panel Kontrol Manual Aktuator</h3>
-                    <p class="text-xs text-slate-400">Aktifkan Mode Manual untuk mengendalikan Relay & LED secara langsung.</p>
-                </div>
-                <div class="flex items-center gap-3 bg-slate-900 p-2 rounded-xl border border-slate-700 select-none">
-                    <span id="lbl-mode-oto" class="text-xs font-bold text-emerald-400 px-2">OTOMATIS</span>
-                    <button id="btn-toggle-mode" onclick="toggleControlMode()" class="w-12 h-6 rounded-full bg-slate-700 relative transition-colors duration-300 focus:outline-none">
-                        <div id="dot-toggle-mode" class="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-transform duration-300"></div>
-                    </button>
-                    <span id="lbl-mode-man" class="text-xs font-bold text-slate-500 px-2">MANUAL</span>
+                    <div class="w-4 h-4 rounded-full bg-slate-500"></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-750 flex flex-col justify-between gap-4">
-                    <span class="text-sm font-medium text-slate-400">Kendali Relay</span>
-                    <button id="btn-ctrl-relay" onclick="sendManualCommand('relay')" disabled class="w-full bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed transition-all duration-200">
-                        RELAY: OFF
-                    </button>
-                </div>
-                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-750 flex flex-col justify-between gap-4">
-                    <span class="text-sm font-medium text-slate-400">Kendali Lampu LED</span>
-                    <button id="btn-ctrl-led" onclick="sendManualCommand('led')" disabled class="w-full bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed transition-all duration-200">
-                        LED: OFF
-                    </button>
-                </div>
-            </div>
         </div>
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-sm">
             <h3 class="text-md font-semibold text-slate-300 mb-4">Payload JSON Terakhir Diterima:</h3>
-            <div class="bg-slate-900 rounded-xl p-4 font-mono text-sm text-emerald-400 overflow-x-auto border border-slate-700">
+            <div class="bg-slate-900 rounded-xl p-4 font-mono text-sm text-emerald-400 overflow-x-auto border border-slate-750">
                 <span id="raw-payload">// Menunggu data dari ESP32...</span>
             </div>
             <div class="text-xs text-slate-500 mt-2 text-right">
@@ -131,16 +103,11 @@
 
     <script>
         const MQTT_HOST = "broker.hivemq.com";
-        const MQTT_PORT = 8884; 
-        const MQTT_TOPIC_DATA = "hidroponik/kualitas_air";
-        const MQTT_TOPIC_CTRL = "hidroponik/kontrol"; // Topik baru untuk instruksi kontrol manual
+        const MQTT_PORT = 8884; // Port WSS untuk koneksi HTTPS aman (GitHub Pages)
+        const MQTT_TOPIC = "hidroponik/kualitas_air";
         const CLIENT_ID = "web_dashboard_" + Math.random().toString(16).substr(2, 8);
 
         const client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), CLIENT_ID);
-
-        // State Global Aplikasi Web
-        let isManualMode = false;
-        let manualState = { relay: 0, led: 0 };
 
         client.onConnectionLost = onConnectionLost;
         client.onMessageArrived = onMessageArrived;
@@ -161,7 +128,7 @@
             document.getElementById("status-indicator").className = "w-3 h-3 rounded-full bg-emerald-500";
             document.getElementById("status-text").innerText = "Terhubung";
             document.getElementById("status-text").className = "text-sm font-medium text-emerald-400";
-            client.subscribe(MQTT_TOPIC_DATA);
+            client.subscribe(MQTT_TOPIC);
         }
 
         function onFailure(message) {
@@ -179,98 +146,13 @@
             }
         }
 
-        // --- FUNGSI BARU: LOGIKA KONTROL MANUAL ---
-        function toggleControlMode() {
-            isManualMode = !isManualMode;
-            
-            const btnToggle = document.getElementById("btn-toggle-mode");
-            const dotToggle = document.getElementById("dot-toggle-mode");
-            const lblOto = document.getElementById("lbl-mode-oto");
-            const lblMan = document.getElementById("lbl-mode-man");
-            
-            const btnRelay = document.getElementById("btn-ctrl-relay");
-            const btnLed = document.getElementById("btn-ctrl-led");
-
-            if (isManualMode) {
-                // Berubah ke Manual
-                btnToggle.className = "w-12 h-6 rounded-full bg-emerald-500 relative transition-colors duration-300 focus:outline-none";
-                dotToggle.className = "w-5 h-5 bg-white rounded-full absolute top-0.5 left-6 transition-transform duration-300";
-                lblOto.className = "text-xs font-bold text-slate-500 px-2";
-                lblMan.className = "text-xs font-bold text-emerald-400 px-2";
-                
-                // Mengaktifkan interaksi tombol
-                btnRelay.disabled = false;
-                btnLed.disabled = false;
-                updateButtonStyles();
-            } else {
-                // Kembali ke Otomatis
-                btnToggle.className = "w-12 h-6 rounded-full bg-slate-700 relative transition-colors duration-300 focus:outline-none";
-                dotToggle.className = "w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-transform duration-300";
-                lblOto.className = "text-xs font-bold text-emerald-400 px-2";
-                lblMan.className = "text-xs font-bold text-slate-500 px-2";
-                
-                // Mematikan tombol
-                btnRelay.disabled = true;
-                btnLed.disabled = true;
-                btnRelay.className = "w-full bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed transition-all duration-200";
-                btnLed.className = "w-full bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed transition-all duration-200";
-            }
-            // Kirim status mode saat ini ke ESP32
-            publishControlMessage();
-        }
-
-        function sendManualCommand(device) {
-            if (!isManualMode) return;
-            manualState[device] = manualState[device] === 1 ? 0 : 1;
-            updateButtonStyles();
-            publishControlMessage();
-        }
-
-        function updateButtonStyles() {
-            const btnRelay = document.getElementById("btn-ctrl-relay");
-            const btnLed = document.getElementById("btn-ctrl-led");
-
-            if (manualState.relay === 1) {
-                btnRelay.className = "w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20";
-                btnRelay.innerText = "RELAY: ON";
-            } else {
-                btnRelay.className = "w-full bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-bold py-3 px-4 rounded-xl transition-all duration-200";
-                btnRelay.innerText = "RELAY: OFF";
-            }
-
-            if (manualState.led === 1) {
-                btnLed.className = "w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-red-500/20";
-                btnLed.innerText = "LED: ON";
-            } else {
-                btnLed.className = "w-full bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 font-bold py-3 px-4 rounded-xl transition-all duration-200";
-                btnLed.innerText = "LED: OFF";
-            }
-        }
-
-        function publishControlMessage() {
-            const payload = JSON.stringify({
-                mode: isManualMode ? "manual" : "otomatis",
-                relay: manualState.relay,
-                led: manualState.led
-            });
-
-            try {
-                const message = new Paho.MQTT.Message(payload);
-                message.destinationName = MQTT_TOPIC_CTRL;
-                client.send(message);
-                console.log("Perintah kontrol terkirim: " + payload);
-            } catch (error) {
-                console.error("Gagal mengirim MQTT control payload:", error);
-            }
-        }
-        // -----------------------------------------------------
-
         function onMessageArrived(message) {
             console.log("Data masuk: " + message.payloadString);
             
             try {
                 const data = JSON.parse(message.payloadString);
                 
+                // 1. Update Nilai Sensor Utama
                 let temp = data.temperature !== undefined ? Number(data.temperature) : null;
                 let hum = data.humidity !== undefined ? Number(data.humidity) : null;
                 let pH = data.pH !== undefined ? Number(data.pH) : null;
@@ -281,8 +163,9 @@
                 if (pH !== null) document.getElementById("val-ph").innerText = pH.toFixed(2);
                 if (turbidity !== null) document.getElementById("val-turbidity").innerText = turbidity.toFixed(2);
                 
-                // Logika UI Status Indikator ini diabaikan / tidak menimpa jika halaman sedang dalam Mode Manual
-                if (!isManualMode && turbidity !== null && pH !== null) {
+                // 2. Logika Output Sinkronisasi Berdasarkan Aturan ESP32 Subscriber
+                // Kondisi Bahaya: Kekeruhan > 1000 NTU ATAU pH < 6.0 ATAU pH > 8.0
+                if (turbidity !== null && pH !== null) {
                     const isDanger = (turbidity > 1000.0 || pH < 6.0 || pH > 8.0);
                     
                     const cardSystem = document.getElementById("card-system-status");
@@ -292,55 +175,45 @@
                     const indicatorRelay = document.getElementById("indicator-relay");
                     const txtLed = document.getElementById("txt-led-status");
                     const indicatorLed = document.getElementById("indicator-led");
-                    const ledDot = document.getElementById("led-dot");
 
                     if (isDanger) {
+                        // Desain Kondisi BAHAYA
                         cardSystem.className = "bg-red-950/40 border border-red-500 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300";
                         txtSystemStatus.innerText = "BAHAYA!";
-                        txtSystemStatus.className = "text-2xl font-bold text-red-400";
+                        txtSystemStatus.className = "text-2xl font-bold text-red-400 animate-pulse";
                         txtSystemDesc.innerText = "Tingkat kekeruhan air terlalu tinggi (>1000 NTU) atau kualitas pH air berada di luar batas normal (6-8).";
                         
+                        // Status Relay ON
                         txtRelay.innerText = "ON (Aktif)";
                         txtRelay.className = "text-xl font-bold text-amber-400";
-                        indicatorRelay.className = "w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500 flex items-center justify-center transition-colors duration-300 shadow-md";
+                        indicatorRelay.className = "w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500 flex items-center justify-center transition-colors duration-300 shadow-md shadow-amber-500/10";
                         
-                        txtLed.innerText = "ON (Aktif)";
+                        // Status LED ON
+                        txtLed.innerText = "ON (Berkedip)";
                         txtLed.className = "text-xl font-bold text-red-400";
-                        indicatorLed.className = "w-12 h-12 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center transition-all duration-300";
-                        ledDot.className = "w-4 h-4 rounded-full bg-red-500 animate-pulse";
+                        indicatorLed.className = "w-12 h-12 rounded-full bg-red-500/30 border border-red-500 flex items-center justify-center transition-all duration-300 shadow-md shadow-red-500/30 animate-ping-once";
+                        indicatorLed.innerHTML = '<div class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>';
                     } else {
+                        // Desain Kondisi AMAN
                         cardSystem.className = "bg-emerald-950/30 border border-emerald-500/40 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300";
                         txtSystemStatus.innerText = "AMAN";
                         txtSystemStatus.className = "text-2xl font-bold text-emerald-400";
                         txtSystemDesc.innerText = "Seluruh parameter air (Tingkat Kekeruhan & Derajat keasaman pH) terpantau stabil dan ideal.";
                         
+                        // Status Relay OFF
                         txtRelay.innerText = "OFF";
                         txtRelay.className = "text-xl font-bold text-slate-400";
                         indicatorRelay.className = "w-12 h-12 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center transition-colors duration-300";
                         
+                        // Status LED OFF
                         txtLed.innerText = "OFF";
                         txtLed.className = "text-xl font-bold text-slate-400";
                         indicatorLed.className = "w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center transition-all duration-300";
-                        ledDot.className = "w-4 h-4 rounded-full bg-slate-500";
+                        indicatorLed.innerHTML = '<div class="w-4 h-4 rounded-full bg-slate-500"></div>';
                     }
-                } else if (isManualMode) {
-                    // Jika mode manual aktif, paksa widget status menampilkan ringkasan mode manual
-                    document.getElementById("card-system-status").className = "bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300";
-                    document.getElementById("txt-system-status").innerText = "MODE MANUAL";
-                    document.getElementById("txt-system-status").className = "text-2xl font-bold text-amber-400";
-                    document.getElementById("txt-system-desc").innerText = "Otomatisasi sensor dinonaktifkan sementara. Aktuator dikontrol penuh oleh Web Dashboard.";
-                    
-                    // Cerminkan langsung apa yang Anda tekan ke widget visual atas
-                    document.getElementById("txt-relay-status").innerText = manualState.relay ? "ON (Manual)" : "OFF";
-                    document.getElementById("txt-relay-status").className = manualState.relay ? "text-xl font-bold text-amber-400" : "text-xl font-bold text-slate-400";
-                    document.getElementById("indicator-relay").className = manualState.relay ? "w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500 flex items-center justify-center shadow-md" : "w-12 h-12 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center";
-                    
-                    document.getElementById("txt-led-status").innerText = manualState.led ? "ON (Manual)" : "OFF";
-                    document.getElementById("txt-led-status").className = manualState.led ? "text-xl font-bold text-red-400" : "text-xl font-bold text-slate-400";
-                    document.getElementById("indicator-led").className = manualState.led ? "w-12 h-12 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center" : "w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center";
-                    document.getElementById("led-dot").className = manualState.led ? "w-4 h-4 rounded-full bg-red-500 animate-pulse" : "w-4 h-4 rounded-full bg-slate-500";
                 }
                 
+                // 3. Tampilkan payload mentah dan penanda waktu
                 document.getElementById("raw-payload").innerText = message.payloadString;
                 document.getElementById("last-update").innerText = new Date().toLocaleTimeString();
                 
